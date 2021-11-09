@@ -1,5 +1,4 @@
 import os
-from typing import Dict
 
 class Node():
     # children: dictionary of node, value: char, end: boolean if word has ended
@@ -9,17 +8,21 @@ class Node():
         self.end = end
 
 ### Root node list will be taken from server somehow! it is just here for now...
-# roots is just the children 
 roots = Node({}, None, False)
 
 # used for testing
 def main():
-    insertWord(roots, 'Cooper')
-    insertWord(roots, "Coopa")
+    insertWord(roots, 'do')
+    insertWord(roots, "dont")
+    deleteWord(roots, 'do')
+    findWord(roots, "do")
+    findWord(roots, 'dont')
+
 
 
 # insert word into trie
 def insertWord(roots, string):
+    string = string.lower()
     node = None
     length = len(string)
     # search roots for fisrt letter
@@ -30,7 +33,6 @@ def insertWord(roots, string):
     else:
         newNode = Node({}, string[i], False)
         roots.children[string[i]] = newNode
-        print(roots.children)
         node = roots.children[string[i]]
         i += 1
     
@@ -45,6 +47,61 @@ def insertWord(roots, string):
             node = node.children[string[i]]
             i += 1
 
+# find word in trie
+def findWord(roots, string):
+    string = string.lower()
+    node = roots
+    i = 0
+    while i < len(string):
+        if string[i] in node.children:
+            node = node.children[string[i]]
+            if i + 1 == len(string) and node.end == True:
+                print('true')
+                return True
+            i += 1
+        else:
+            print('false')
+            return False
+    print("False")
+    return False 
 
 
-main()
+# delete word from trie
+def deleteWord(roots, string):
+    string = string.lower()
+    node = roots
+    i = 0
+    parents = []
+    # collect all nodes until leaf is found
+    while i < len(string):
+        if string[i] in node.children:
+            node = node.children[string[i]]
+            # if is branch and not leaf
+            if i + 1 == len(string) and node.end == True and len(node.children) > 0:
+                node.end = False
+                parents = []
+            else:
+                parents.append(node)
+            i += 1
+        else:
+            print('Word not in Trie')
+            return False
+    
+    i = 0
+    parents.reverse()
+    string = string[::-1]
+    while i < len(parents):
+        # check if branch
+        if len(parents[i].children) > 0:
+            print("Word Deleted")
+            return True
+        else:
+            parents[i+1].children[string[i]]
+        i += 1
+    print("Word Deleted")
+    return True
+
+
+
+if __name__ == "__main__":
+    main()
