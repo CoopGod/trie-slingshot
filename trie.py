@@ -12,12 +12,11 @@ roots = Node({}, None, False)
 
 # used for testing
 def main():
-    insertWord(roots, 'do')
-    insertWord(roots, "dont")
-    deleteWord(roots, 'do')
-    findWord(roots, "do")
-    findWord(roots, 'dont')
-
+    insertWord(roots, 'Cooper')
+    insertWord(roots, "coopa")
+    deleteWord(roots, 'cOoper')
+    findWord(roots, "cooper")
+    findWord(roots, 'coopa')
 
 
 # insert word into trie
@@ -75,9 +74,10 @@ def deleteWord(roots, string):
     # collect all nodes until leaf is found
     while i < len(string):
         if string[i] in node.children:
+            temp = node
             node = node.children[string[i]]
             # if is branch and not leaf
-            if i + 1 == len(string) and node.end == True and len(node.children) > 0:
+            if i + 1 == len(string) and node.end == True and len(temp.children) != 1:
                 node.end = False
                 parents = []
             else:
@@ -92,11 +92,11 @@ def deleteWord(roots, string):
     string = string[::-1]
     while i < len(parents):
         # check if branch
-        if len(parents[i].children) > 0:
+        if len(parents[i].children) == 1:
             print("Word Deleted")
             return True
         else:
-            parents[i+1].children[string[i]]
+            del parents[i+1].children[string[i]]
         i += 1
     print("Word Deleted")
     return True
