@@ -2,21 +2,23 @@ import os
 
 class Node():
     # children: dictionary of node, value: char, end: boolean if word has ended
-    def __init__(self, children, value, end):
+    def __init__(self, children, value, end, name):
         self.children = children
         self.value = value
         self.end = end
+        self.name = name
 
 ### Root node list will be taken from server somehow! it is just here for now...
-roots = Node({}, None, False)
+roots = Node({}, None, False, None)
 
 # used for testing
 def main():
     insertWord(roots, 'Cooper')
-    insertWord(roots, "coopa")
-    deleteWord(roots, 'cOoper')
-    findWord(roots, "cooper")
-    findWord(roots, 'coopa')
+    insertWord(roots, "copper")
+    insertWord(roots, 'coopeer')
+    insertWord(roots, "coopeerr")
+    findWord(roots, "coopeerr")
+    autocorrect(roots, 'co')
 
 
 # insert word into trie
@@ -30,7 +32,7 @@ def insertWord(roots, string):
         node = roots.children[string[i]]
         i += 1
     else:
-        newNode = Node({}, string[i], False)
+        newNode = Node({}, string[i], False, None)
         roots.children[string[i]] = newNode
         node = roots.children[string[i]]
         i += 1
@@ -41,7 +43,7 @@ def insertWord(roots, string):
                 node = node.children[string[i]]
                 i += 1
         else:
-            newNode = Node({}, string[i], False if length != i+1 else True)
+            newNode = Node({}, string[i], False if length != i+1 else True, None if length != i+1 else string)
             node.children[string[i]] = newNode
             node = node.children[string[i]]
             i += 1
@@ -64,6 +66,37 @@ def findWord(roots, string):
     print("False")
     return False 
 
+
+# autocorrect word with given string
+def autocorrect(roots, string):
+    stack = []
+    string = string.lower()
+    node = roots
+    i = 0
+    # find end node of string
+    while i < len(string):
+        if string[i] in node.children:
+            node = node.children[string[i]]
+            if i + 1 == len(string):
+                stack.append(node)
+            i += 1
+    # if there is no node at the end of the string, give error
+    if len(stack) == 0:
+        print('Cannot autocorrect with current string')
+        return False
+    # use stack to find and print all words
+    while len(stack) > 0:
+        stackLength = len(stack)
+        node = stack[-1]
+        if node.end == True:
+            if len(node.children) == 0:
+                stack.pop(stackLength - 1)
+            print(node.name)
+        if len(node.children) > 0:
+            for child in node.children:
+                stack.append(node.children[child])
+            stack.pop(stackLength - 1)
+        
 
 # delete word from trie
 def deleteWord(roots, string):
