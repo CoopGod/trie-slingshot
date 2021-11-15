@@ -8,17 +8,22 @@ class Node():
         self.end = end
         self.name = name
 
+
 ### Root node list will be taken from server somehow! it is just here for now...
 roots = Node({}, None, False, None)
+
 
 # used for testing
 def main():
     insertWord(roots, 'Cooper')
+    insertWord(roots, 'apple')
     insertWord(roots, "copper")
     insertWord(roots, 'coopeer')
     insertWord(roots, "coopeerr")
-    findWord(roots, "coopeerr")
-    autocorrect(roots, 'co')
+    insertWord(roots, 'boo')
+    insertWord(roots, 'baa')
+    insertWord(roots, 'dogma')
+    displayTrie(roots)
 
 
 # insert word into trie
@@ -96,7 +101,14 @@ def autocorrect(roots, string):
             for child in node.children:
                 stack.append(node.children[child])
             stack.pop(stackLength - 1)
-        
+
+
+# function that returns everything in trie! Uses autocorrect to gather everything from all possible root nodes
+def displayTrie(roots):
+    for root in roots.children:
+        print(f"{root.upper()}:")
+        autocorrect(roots, root)
+
 
 # delete word from trie
 def deleteWord(roots, string):
@@ -133,7 +145,6 @@ def deleteWord(roots, string):
         i += 1
     print("Word Deleted")
     return True
-
 
 
 if __name__ == "__main__":
