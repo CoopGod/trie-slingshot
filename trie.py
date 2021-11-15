@@ -1,7 +1,5 @@
-import os
-
 class Node():
-    # children: dictionary of node, value: char, end: boolean if word has ended
+    # children: dictionary of node, value: char, end: boolean if word has ended, name: None if word is incomplete, else it is the full string based on how it was entered
     def __init__(self, children, value, end, name):
         self.children = children
         self.value = value
@@ -36,12 +34,12 @@ def insertWord(roots, string):
     if string[i] in roots.children:
         node = roots.children[string[i]]
         i += 1
+    # if root has not yet been used, create it!
     else:
         newNode = Node({}, string[i], False, None)
         roots.children[string[i]] = newNode
         node = roots.children[string[i]]
         i += 1
-    
     # main loop for scanning all but first iterartion
     while i < length:
         if string[i] in node.children:
@@ -59,8 +57,10 @@ def findWord(roots, string):
     node = roots
     i = 0
     while i < len(string):
+        # check if char is in the children of node. if not then the word cannot exists!
         if string[i] in node.children:
             node = node.children[string[i]]
+            # if all the chars have been used and it is the end of a word, word found
             if i + 1 == len(string) and node.end == True:
                 print('true')
                 return True
@@ -72,7 +72,7 @@ def findWord(roots, string):
     return False 
 
 
-# autocorrect word with given string
+# autocorrect word with given string (final letter of string basically becomes root)
 def autocorrect(roots, string):
     stack = []
     string = string.lower()
@@ -93,10 +93,12 @@ def autocorrect(roots, string):
     while len(stack) > 0:
         stackLength = len(stack)
         node = stack[-1]
+        # if node is a full word print it but if it still has children don't delete it, wait for next step
         if node.end == True:
             if len(node.children) == 0:
                 stack.pop(stackLength - 1)
             print(node.name)
+        # add all children to frontier and delete parent
         if len(node.children) > 0:
             for child in node.children:
                 stack.append(node.children[child])
@@ -105,8 +107,12 @@ def autocorrect(roots, string):
 
 # function that returns everything in trie! Uses autocorrect to gather everything from all possible root nodes
 def displayTrie(roots):
+    # colors for pretty printing <3
+    end = '\033[0m'
+    color = '\033[33m'
+    # for every root, print all possible words
     for root in roots.children:
-        print(f"{root.upper()}:")
+        print(f"{color}{root.upper()} ---------------------------- {root.upper()}{end}")
         autocorrect(roots, root)
 
 
