@@ -51,6 +51,7 @@ def insertWord(roots, string):
             node = node.children[string[i]]
             i += 1
 
+
 # find word in trie
 def findWord(roots, string):
     string = string.lower()
