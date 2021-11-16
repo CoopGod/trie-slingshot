@@ -1,3 +1,5 @@
+import psycopg2
+
 class Node():
     # children: dictionary of node, value: char, end: boolean if word has ended, name: None if word is incomplete, else it is the full string based on how it was entered
     def __init__(self, children, value, end, name):
@@ -7,21 +9,35 @@ class Node():
         self.name = name
 
 
-### Root node list will be taken from server somehow! it is just here for now...
-roots = Node({}, None, False, None)
+# connect to database
+def connect():
+    DB_USER = 'mdrzpknxiajuop'
+    DB_PASS = 'd3ff4854dff983a357db4732e8f6474372b5da9cd94cdd01a034250d53b64ad6'
+    DB_NAME = 'd2djo5ehlotgfp'
+    DB_HOST = 'ec2-35-168-65-132.compute-1.amazonaws.com'
+    try:
+        conn =psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
+    except psycopg2.OperationalError:
+        print("------------- Server Error -------------")
+        return 0
+    cur = conn.cursor()
+    return [cur,conn]
+
+
+# disconnect from database
+def disconnect(cur, conn):
+    cur.close()
+    conn.close()
 
 
 # used for testing
 def main():
-    insertWord(roots, 'Cooper')
-    insertWord(roots, 'apple')
-    insertWord(roots, "copper")
-    insertWord(roots, 'coopeer')
-    insertWord(roots, "coopeerr")
-    insertWord(roots, 'boo')
-    insertWord(roots, 'baa')
-    insertWord(roots, 'dogma')
+    db = connect()
+    db[0].execute("SELECT * FROM roots WHERE (parent) = (None)") # TODO START HERE
+    roots = db[0].fetchone()[1]
+    # insertWord(roots, 'dogma')
     displayTrie(roots)
+    disconnect(db[0], db[1])
 
 
 # insert word into trie
