@@ -24,11 +24,12 @@ def disconnect(cur, conn):
 # used for testing
 def main():
     db = connect()
-    db['cur'].execute("DELETE FROM nodes WHERE value = 'a'")
+    autocorrect('do', db)
     insertWord('dogma', db)
-    findWord('dogma', db)
-    deleteWord('dogma', db)
-    findWord('dogma', db)
+    autocorrect('do', db)
+    # findWord('dogma', db)
+    # deleteWord('dogma', db)
+    # findWord('dogma', db)
     disconnect(db['cur'], db['conn'])
 
 
@@ -85,37 +86,10 @@ def findWord(string, db):
 
 
 # autocorrect word with given string (final letter of string basically becomes root)
-def autocorrect(roots, string):
-    stack = []
-    string = string.lower()
-    node = roots
-    i = 0
-    # find end node of string
-    while i < len(string):
-        if string[i] in node.children:
-            node = node.children[string[i]]
-            if i + 1 == len(string):
-                stack.append(node)
-            i += 1
-    # if there is no node at the end of the string, give error
-    if len(stack) == 0:
-        print('Cannot autocorrect with current string')
-        return False
-    # use stack to find and print all words
-    while len(stack) > 0:
-        stackLength = len(stack)
-        node = stack[-1]
-        # if node is a full word print it but if it still has children don't delete it, wait for next step
-        if node.end == True:
-            if len(node.children) == 0:
-                stack.pop(stackLength - 1)
-            print(node.name)
-        # add all children to frontier and delete parent
-        if len(node.children) > 0:
-            for child in node.children:
-                stack.append(node.children[child])
-            stack.pop(stackLength - 1)
-
+def autocorrect(string, db):
+    db['cur'].execute(f"SELECT name FROM nodes WHERE name LIKE '{string}%'") # see if any full word starts with substring provided
+    names = db['cur'].fetchall()
+    print(names) # TODO make more pretty. for loop to print all on new line??
 
 # function that returns everything in trie! Uses autocorrect to gather everything from all possible root nodes
 def displayTrie(roots):
@@ -123,6 +97,7 @@ def displayTrie(roots):
     end = '\033[0m'
     color = '\033[33m'
     # for every root, print all possible words
+    # TODO find roots (parent = none) and use their value as substring for autocorrect
     for root in roots.children:
         print(f"{color}{root.upper()} ---------------------------- {root.upper()}{end}")
         autocorrect(roots, root)
