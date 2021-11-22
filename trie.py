@@ -1,27 +1,19 @@
 import psycopg2
 
-class Node():
-    # children: dictionary of node, value: char, end: boolean if word has ended, name: None if word is incomplete, else it is the full string based on how it was entered
-    def __init__(self, children, value, end, name):
-        self.children = children
-        self.value = value
-        self.end = end
-        self.name = name
-
 
 # connect to database
 def connect():
-    DB_USER = 'mdrzpknxiajuop'
-    DB_PASS = 'd3ff4854dff983a357db4732e8f6474372b5da9cd94cdd01a034250d53b64ad6'
-    DB_NAME = 'd2djo5ehlotgfp'
-    DB_HOST = 'ec2-35-168-65-132.compute-1.amazonaws.com'
+    DB_USER = 'cukovzgvzwrzzb'
+    DB_PASS = '89e9ce9cb2b62814123837651020c6729cc585e1eeb17bda88f73dbeb65435d1'
+    DB_NAME = 'd1bmllc381j86o'
+    DB_HOST = 'ec2-52-20-143-167.compute-1.amazonaws.com'
     try:
         conn =psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
     except psycopg2.OperationalError:
         print("------------- Server Error -------------")
         return 0
     cur = conn.cursor()
-    return [cur,conn]
+    return {'cur': cur,'conn': conn}
 
 
 # disconnect from database
@@ -29,64 +21,67 @@ def disconnect(cur, conn):
     cur.close()
     conn.close()
 
-
 # used for testing
 def main():
     db = connect()
-    db[0].execute("SELECT * FROM roots WHERE (parent) = (None)") # TODO START HERE
-    roots = db[0].fetchone()[1]
-    # insertWord(roots, 'dogma')
-    displayTrie(roots)
-    disconnect(db[0], db[1])
+    db['cur'].execute("DELETE FROM nodes WHERE value = 'a'")
+    insertWord('dogma', db)
+    findWord('dogma', db)
+    deleteWord('dogma', db)
+    findWord('dogma', db)
+    disconnect(db['cur'], db['conn'])
 
 
 # insert word into trie
-def insertWord(roots, string):
+def insertWord(string, db):
     string = string.lower()
-    node = None
+    parent = 'NULL'
     length = len(string)
-    # search roots for fisrt letter
     i = 0
-    if string[i] in roots.children:
-        node = roots.children[string[i]]
-        i += 1
-    # if root has not yet been used, create it!
-    else:
-        newNode = Node({}, string[i], False, None)
-        roots.children[string[i]] = newNode
-        node = roots.children[string[i]]
-        i += 1
-    # main loop for scanning all but first iterartion
+    # main loop for scanning using all chars of string
     while i < length:
-        if string[i] in node.children:
-                node = node.children[string[i]]
-                i += 1
+        if i == 0:
+            db['cur'].execute(f"SELECT ID FROM nodes WHERE parent IS {parent} AND value='{string[i]}'")
         else:
-            newNode = Node({}, string[i], False if length != i+1 else True, None if length != i+1 else string)
-            node.children[string[i]] = newNode
-            node = node.children[string[i]]
+            db['cur'].execute(f"SELECT ID FROM nodes WHERE parent = {parent} AND value='{string[i]}'")
+        newNode = db['cur'].fetchall()
+        # if final node, make it marked as such
+        if i + 1 == length:
+            # if final node exists change its wordEnd and name value
+            if len(newNode) != 0:
+                db['cur'].execute(f"UPDATE nodes SET word_end = True, name = '{string}' WHERE parent = {parent} AND value = '{string[i]}'")
+            # if the node hasn't been created, do so
+            else:
+                db['cur'].execute(f"INSERT INTO nodes (parent, value, word_end, name) VALUES ({parent}, '{string[i]}', True, '{string}')")
             i += 1
+        # if node exists, use it and continue
+        elif len(newNode) != 0:
+                parent = newNode[0][0] # get parent ID number
+                i += 1
+        # if node has not yet been used, create it!
+        else:
+            if parent == 'NULL':
+                db['cur'].execute(f"INSERT INTO nodes (parent, value) VALUES (NULL, '{string[i]}')") # insert
+                db['cur'].execute(f"SELECT ID FROM nodes WHERE parent IS NULL AND value='{string[i]}'") # find ID
+            else:
+                db['cur'].execute(f"INSERT INTO nodes (parent, value) VALUES ({parent}, '{string[i]}')") # insert
+                db['cur'].execute(f"SELECT ID FROM nodes WHERE parent = {parent} AND value='{string[i]}'") # find ID
+            parent = db['cur'].fetchall()[0][0] # log parent ID number
+            i += 1
+    db['conn'].commit()
 
 
 # find word in trie
-def findWord(roots, string):
+def findWord(string, db):
     string = string.lower()
-    node = roots
-    i = 0
-    while i < len(string):
-        # check if char is in the children of node. if not then the word cannot exists!
-        if string[i] in node.children:
-            node = node.children[string[i]]
-            # if all the chars have been used and it is the end of a word, word found
-            if i + 1 == len(string) and node.end == True:
-                print('true')
-                return True
-            i += 1
-        else:
-            print('false')
-            return False
-    print("False")
-    return False 
+    db['cur'].execute(f"SELECT id FROM nodes WHERE name = '{string}'")
+    newNode = db['cur'].fetchall()
+    if len(newNode) != 0:
+        print('True')
+        return True
+    else:
+        print('False')
+        return False
 
 
 # autocorrect word with given string (final letter of string basically becomes root)
@@ -134,40 +129,57 @@ def displayTrie(roots):
 
 
 # delete word from trie
-def deleteWord(roots, string):
+def deleteWord(string, db):
     string = string.lower()
-    node = roots
+    # make sure that word exists!
+    if not findWord(string, db):
+        print("The word does not exist!")
+        return 0
+    # find node of the final char in string
+    db['cur'].execute(f"SELECT id, parent FROM nodes WHERE name = '{string}'")
+    node = db['cur'].fetchall()
+    parent = node[0][1]
+    nodeID = node[0][0]
+    # check if this node has children
+    db['cur'].execute(f"SELECT id FROM nodes WHERE parent = {nodeID}")
+    node = db['cur'].fetchall()
+    if len(node) > 0:
+        ## TODO remove word_end and name values
+        print("Deleted")
+        db['conn'].commit()
+        return 1
+    else:
+        db['cur'].execute(f"DELETE FROM nodes WHERE id = {nodeID}") # delete current node
+    # move through all parents checking if they have multiple children
     i = 0
-    parents = []
-    # collect all nodes until leaf is found
     while i < len(string):
-        if string[i] in node.children:
-            temp = node
-            node = node.children[string[i]]
-            # if is branch and not leaf
-            if i + 1 == len(string) and node.end == True and len(temp.children) != 1:
-                node.end = False
-                parents = []
+        if parent == None:
+            db['cur'].execute("SELECT id FROM nodes WHERE parent IS NULL")
+            children = db['cur'].fetchall()
+            # see if parent has children, if yes: word is deleted, no: delete node and continue
+            if len(children) > 1:
+                print("Deleted")
+                return 1
             else:
-                parents.append(node)
+                db['cur'].execute(f"DELETE FROM nodes WHERE parent IS NULL AND value = '{string[i]}'") # delete current node
             i += 1
         else:
-            print('Word not in Trie')
-            return False
+            db['cur'].execute(f"SELECT parent FROM nodes WHERE parent = {parent}")
+            children = db['cur'].fetchall()
+            # see if parent has children, if yes: word is deleted, no: delete node and continue
+            if len(children) > 1:
+                print("Deleted")
+                return 1
+            else:
+                db['cur'].execute(f"SELECT parent FROM nodes WHERE id = {parent}") # find current node's parent node
+                temp = db['cur'].fetchall()[0][0]
+                db['cur'].execute(f"DELETE FROM nodes WHERE id = {parent}") # delete current node
+                parent = temp
+            i += 1
+    db['conn'].commit()
+    print("Deleted")
+    return 1
     
-    i = 0
-    parents.reverse()
-    string = string[::-1]
-    while i < len(parents):
-        # check if branch
-        if len(parents[i].children) == 1:
-            print("Word Deleted")
-            return True
-        else:
-            del parents[i+1].children[string[i]]
-        i += 1
-    print("Word Deleted")
-    return True
 
 
 if __name__ == "__main__":
