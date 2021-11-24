@@ -24,12 +24,7 @@ def disconnect(cur, conn):
 # used for testing
 def main():
     db = connect()
-    autocorrect('do', db)
-    insertWord('dogma', db)
-    autocorrect('do', db)
-    # findWord('dogma', db)
-    # deleteWord('dogma', db)
-    # findWord('dogma', db)
+    displayTrie(db)
     disconnect(db['cur'], db['conn'])
 
 
@@ -87,20 +82,24 @@ def findWord(string, db):
 
 # autocorrect word with given string (final letter of string basically becomes root)
 def autocorrect(string, db):
-    db['cur'].execute(f"SELECT name FROM nodes WHERE name LIKE '{string}%'") # see if any full word starts with substring provided
+    db['cur'].execute(f"SELECT name FROM nodes WHERE name LIKE '{string}%' ORDER BY name") # see if any full word starts with substring provided
     names = db['cur'].fetchall()
-    print(names) # TODO make more pretty. for loop to print all on new line??
+    for name in names:
+        print(name[0])
 
 # function that returns everything in trie! Uses autocorrect to gather everything from all possible root nodes
-def displayTrie(roots):
+def displayTrie(db):
     # colors for pretty printing <3
     end = '\033[0m'
     color = '\033[33m'
     # for every root, print all possible words
-    # TODO find roots (parent = none) and use their value as substring for autocorrect
-    for root in roots.children:
-        print(f"{color}{root.upper()} ---------------------------- {root.upper()}{end}")
-        autocorrect(roots, root)
+    db['cur'].execute("SELECT value FROM nodes WHERE parent IS NULL")
+    roots = db['cur'].fetchall()
+    # move through root values and print pretty colors and words
+    for root in roots:
+        print(f"{color}{root[0].upper()} ---------------------------- {root[0].upper()}{end}")
+        autocorrect(root[0], db)
+    print(f"{color}--------------------------------{end}")
 
 
 # delete word from trie
@@ -119,7 +118,8 @@ def deleteWord(string, db):
     db['cur'].execute(f"SELECT id FROM nodes WHERE parent = {nodeID}")
     node = db['cur'].fetchall()
     if len(node) > 0:
-        ## TODO remove word_end and name values
+        # remove word_end and name values
+        db['cur'].execute(f"UPDATE nodes SET word_end = false, name = NULL WHERE name = '{string}'")
         print("Deleted")
         db['conn'].commit()
         return 1
