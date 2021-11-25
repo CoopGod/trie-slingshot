@@ -13,6 +13,7 @@ def connect():
         print("------------- Server Error -------------")
         return 0
     cur = conn.cursor()
+    print('Database connected.')
     return {'cur': cur,'conn': conn}
 
 
@@ -23,10 +24,49 @@ def disconnect(cur, conn):
 
 # used for testing
 def main():
+    print('Connecting to database')
     db = connect()
-    displayTrie(db)
+    userInput(db)
     disconnect(db['cur'], db['conn'])
+    print('Database disconnected.')
 
+# function to allow user to make selection
+def userInput(db):
+    userQuit = False
+    while userQuit == False:
+        userIn = input("Task: ")
+        userIn.lower()
+        if userIn == "help":
+            print("Please select one of the following choice to begin a task.")
+            print("HELP - Where you are right now! (goodjob!) Refer to this when you need a reminder on command names and their details.")
+            print("INSERT - Use this command to insert a word into the trie! After selecting it, the system will prompt you to type in the word to be inserted.")
+            print("FIND - Use this command to see if a word exists in the trie. After selecting it, the system will prompt you to type in the word to be located. Returns True or False.")
+            print('''DELETE - Use this command to remove a word from the trie! After selecting it, the system will prompt you to type in the word to be deleted.
+            Will return true if word is located and will confirm deletion after process is completed.''')
+            print('''AUTO - Use this command to locate a substring in the trie. This can be used to autocorrect for words. After selecting it, the system will prompt you to type in the 
+            substring to be located. This command will return all words that begin witht he provided string.''')
+            print("DISPLAY - This command will display all complete words in the trie and where they sprout off from.")
+            print("QUIT - Used to exit the trie.")
+        elif userIn == 'insert':
+            userIn = input("String: ")
+            insertWord(userIn, db)
+        elif userIn == 'find':
+            userIn = input("String: ")
+            findWord(userIn, db)
+        elif userIn == 'delete':
+            userIn = input("String: ")
+            deleteWord(userIn, db)
+        elif userIn == 'auto':
+            userIn = input("String: ")
+            autocorrect(userIn, db)
+        elif userIn == 'display':
+            displayTrie(db)
+        elif userIn == "quit":
+            print('Thank you! Exiting database.')
+            userQuit = True
+        else:
+            print("Command not found! Please use 'help' for... well, help!")
+            userInput(db)
 
 # insert word into trie
 def insertWord(string, db):
@@ -84,6 +124,8 @@ def findWord(string, db):
 def autocorrect(string, db):
     db['cur'].execute(f"SELECT name FROM nodes WHERE name LIKE '{string}%' ORDER BY name") # see if any full word starts with substring provided
     names = db['cur'].fetchall()
+    if len(names) == 0:
+        print("No words found with given substring")
     for name in names:
         print(name[0])
 
@@ -125,6 +167,7 @@ def deleteWord(string, db):
         return 1
     else:
         db['cur'].execute(f"DELETE FROM nodes WHERE id = {nodeID}") # delete current node
+    db['conn'].commit()
     # move through all parents checking if they have multiple children
     i = 0
     while i < len(string):
@@ -139,10 +182,10 @@ def deleteWord(string, db):
                 db['cur'].execute(f"DELETE FROM nodes WHERE parent IS NULL AND value = '{string[i]}'") # delete current node
             i += 1
         else:
-            db['cur'].execute(f"SELECT parent FROM nodes WHERE parent = {parent}")
+            db['cur'].execute(f"SELECT id FROM nodes WHERE parent = {parent}")
             children = db['cur'].fetchall()
             # see if parent has children, if yes: word is deleted, no: delete node and continue
-            if len(children) > 1:
+            if len(children) > 0:
                 print("Deleted")
                 return 1
             else:
@@ -151,7 +194,7 @@ def deleteWord(string, db):
                 db['cur'].execute(f"DELETE FROM nodes WHERE id = {parent}") # delete current node
                 parent = temp
             i += 1
-    db['conn'].commit()
+        db['conn'].commit()
     print("Deleted")
     return 1
     
