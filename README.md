@@ -6,7 +6,7 @@ The python file, when run, connects to the postgreSQL database using the python 
 ### Installation Guide 📁
 1. Be sure you have downloaded the latest version of python.
 2. Download this repository.
-3. Launch you OS command line and navigate to the directory in which you've saved this repository.
+3. Launch your OS command line and navigate to the directory in which you've saved this repository.
 4. Run the following command: ```pip install -r requirements.txt``` to install the library required.
 5. Run the following command ```python trie.py``` to launch the CLI.
 6. After the database has connected, run any of the commands listed below. Happy *trie-ing*!
