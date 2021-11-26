@@ -1,6 +1,5 @@
 import psycopg2
 
-
 # connect to database
 def connect():
     DB_USER = 'cukovzgvzwrzzb'
@@ -22,6 +21,7 @@ def disconnect(cur, conn):
     cur.close()
     conn.close()
 
+
 # used for testing
 def main():
     print('Connecting to database')
@@ -29,6 +29,7 @@ def main():
     userInput(db)
     disconnect(db['cur'], db['conn'])
     print('Database disconnected.')
+
 
 # function to allow user to make selection
 def userInput(db):
@@ -67,6 +68,7 @@ def userInput(db):
         else:
             print("Command not found! Please use 'help' for... well, help!")
             userInput(db)
+
 
 # insert word into trie
 def insertWord(string, db):
@@ -128,6 +130,7 @@ def autocorrect(string, db):
         print("No words found with given substring")
     for name in names:
         print(name[0])
+
 
 # function that returns everything in trie! Uses autocorrect to gather everything from all possible root nodes
 def displayTrie(db):
@@ -198,7 +201,6 @@ def deleteWord(string, db):
     print("Deleted")
     return 1
     
-
 
 if __name__ == "__main__":
     main()
