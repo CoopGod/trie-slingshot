@@ -139,7 +139,7 @@ def displayTrie(db):
     roots = db['cur'].fetchall()
     # move through root values and print pretty colors and words
     for root in roots:
-        print(f"{color}{root[0].upper()} ---------------------------- {root[0].upper()}{end}")
+        print(f"{root[0].upper()} ------------------------------ {root[0].upper()}")
         autocorrect(root[0], db)
     print(f"{color}--------------------------------{end}")
 
