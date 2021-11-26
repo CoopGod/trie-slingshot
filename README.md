@@ -2,7 +2,7 @@
 ### *How* It's Hosted 🏠
 The server for this project is hosted using Heroku's PostgreSQL add-on.
 ### *How* The CLI Interacts 🧭
-The python file, when run, connects to the postgreSQL database using the python library **psycopg2.** The allows the CLI to read everything from the trie. When deleting or inserting nodes into the trie, the CLI will commit changes after it has confirmed that the change is needed, rather than attemp to insert nodes that already exist, or delete nodes that are usful to the trie.
+The python file, when run, connects to the postgreSQL database using the python library **psycopg2.** This allows the CLI to read everything from the trie. When deleting or inserting nodes into the trie, the CLI will commit changes after it has confirmed that the change is needed, rather than attemp to insert nodes that already exist, or delete nodes that are usful to the trie.
 ### Installation Guide 📁
 1. Be sure you have downloaded the latest version of python.
 2. Download this repository.
